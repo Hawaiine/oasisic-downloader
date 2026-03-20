@@ -276,7 +276,7 @@ function downloadAudio(url, format, taskDir, onProgress, onProcStart) {
       '-4', '--no-playlist',
       '-f', 'bestaudio[ext=webm]/bestaudio/best',
       '-x', '--audio-format', format, '--audio-quality', '0',
-      '--embed-thumbnail', '--embed-metadata', '--add-metadata',
+      '--embed-thumbnail',
       '--write-info-json', '--write-thumbnail', '--convert-thumbnails', 'jpg',
       '--newline', '--no-warnings',
       '--ffmpeg-location', CONFIG.FFMPEG_DIR,
@@ -336,7 +336,7 @@ function downloadVideo(url, quality, outputFormat, taskDir, onProgress, onProcSt
     const args = [
       '-4', '--no-playlist', '-f', formatSelector,
       '--merge-output-format', outputFormat,
-      '--embed-thumbnail', '--embed-metadata', '--add-metadata',
+      '--embed-thumbnail',
       '--write-info-json', '--newline', '--no-warnings',
       '--ffmpeg-location', CONFIG.FFMPEG_DIR,
       '--downloader', 'aria2c',
