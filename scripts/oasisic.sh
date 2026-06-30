@@ -5,8 +5,8 @@
 # ============================================================
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "$0")")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/server/.env"
+SCRIPT_DIR="@@INSTALL_DIR@@"
+ENV_FILE="@@ENV_FILE@@"
 YTDLP_BIN="/usr/local/bin/yt-dlp"
 PM2_PROC="oasisic-downloader"
 

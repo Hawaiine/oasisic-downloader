@@ -1,131 +1,127 @@
 #!/usr/bin/env bash
 # ============================================================
-# Oasisic Downloader — 一键安装脚本
+# Oasisic Downloader — 安装脚本
 # 用法: sudo ./install.sh
-# 平台: Debian 12+ / Ubuntu 22.04+
+# 平台: Debian/Ubuntu
 # ============================================================
 set -euo pipefail
 
-R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' C='\033[0;36m' B='\033[1m' N='\033[0m' D='\033[2m'
-ok()   { echo -e " ${G}✅${N}  $*"; }
-fail() { echo -e " ${R}❌  $*${N}" >&2; exit 1; }
-warn() { echo -e " ${Y}⚠️  $*${N}"; }
-info() { echo -e " ${C}ℹ️  $*${N}"; }
-skip() { echo -e " ${D}⏭️  $*${N}"; }
-step() { echo -e "\n${B}━━━  $*  ━━━${N}"; }
+R='\033[0;31m' G='\033[0;32m' Y='\033[1;33m' C='\033[0;36m' N='\033[0m'
+ok()   { echo -e "  ${G}✓${N}  $*"; }
+fail() { echo -e "  ${R}✗${N}  $*" >&2; exit 1; }
+info() { echo -e "  ${C}→${N}  $*"; }
+skip() { echo -e "  ${C}→${N}  $* ${Y}(已存在)${N}"; }
+head() { echo -e "\n ${C}━━━  $*  ━━━${N}"; }
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ENV_FILE="$SCRIPT_DIR/server/.env"
-YTDLP_BIN="/usr/local/bin/yt-dlp"
-PM2_PROC="oasisic-downloader"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV="$DIR/server/.env"
+YT="/usr/local/bin/yt-dlp"
 START=$(date +%s)
 
-# ─── 1. 收集参数 ──────────────────────────────────────────────
+# ─── 1. 参数 ────────────────────────────────────────────────────
 clear 2>/dev/null || true
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║   🧲 Oasisic Downloader  安装向导        ║"
-echo "  ╚══════════════════════════════════════════╝"
-echo "  目录: ${SCRIPT_DIR}"
+echo "    Oasisic Downloader — 安装"
+echo "    ─────────────────────────────"
+echo ""
 
 # 端口
-DEF_PORT="3000"
-[ -f "$ENV_FILE" ] && DEF_PORT="$(grep -E '^PORT=' "$ENV_FILE" | tail -1 | cut -d= -f2 | tr -d ' ')"
-read -r -p "  → 端口 (默认 ${DEF_PORT}): " _P
-PORT="${_P:-$DEF_PORT}"
-[[ "$PORT" =~ ^[0-9]+$ ]] && [ "$PORT" -ge 1 ] && [ "$PORT" -le 65535 ] || fail "无效端口"
+P="3000"
+[ -f "$ENV" ] && P=$(grep -E '^PORT=' "$ENV" | tail -1 | cut -d= -f2 | tr -d ' ')
+read -r -p "    端口 [${P}]: " _P
+P="${_P:-$P}"
 
-# Spotify (可选)
-EXIST_ID=""; EXIST_SEC=""
-[ -f "$ENV_FILE" ] && { EXIST_ID="$(grep -E '^SPOTIFY_CLIENT_ID=' "$ENV_FILE" | cut -d= -f2 | tr -d ' ')"; EXIST_SEC="$(grep -E '^SPOTIFY_CLIENT_SECRET=' "$ENV_FILE" | cut -d= -f2 | tr -d ' ')"; }
-if [ -n "$EXIST_ID" ]; then
-  SPOT_ID="$EXIST_ID"; SPOT_SEC="$EXIST_SEC"
-  ok "Spotify 凭证已存在"
-else
-  echo ""; echo "  Spotify API (可选，回车跳过)"
-  read -r -p "  → Client ID: " SPOT_ID
-  read -r -p "  → Secret: " SPOT_SEC
+# Spotify
+S1=""; S2=""
+[ -f "$ENV" ] && S1=$(grep -E '^SPOTIFY_CLIENT_ID=' "$ENV" | tail -1 | cut -d= -f2 | tr -d ' ')
+[ -f "$ENV" ] && S2=$(grep -E '^SPOTIFY_CLIENT_SECRET=' "$ENV" | tail -1 | cut -d= -f2 | tr -d ' ')
+if [ -z "$S1" ]; then
+  echo ""
+  read -r -p "    Spotify Client ID (回车跳过): " S1
+  read -r -p "    Spotify Secret   (回车跳过): " S2
 fi
 
-read -r -p "  → 开始安装？[Y/n]: " _GO
-[[ "${_GO,,}" == "n" ]] && exit 0
+echo ""
+read -r -p "    开始安装？[Y/n] " _G
+[[ "${_G,,}" == "n" ]] && exit 0
 
-# ─── 2. 系统依赖 ──────────────────────────────────────────────
-step "1/5 · 系统依赖"
-apt-get update -qq
-for pkg in curl ffmpeg aria2 python3 python3-pip; do
-  dpkg -s "$pkg" &>/dev/null && skip "$pkg 已存在" || { apt-get install -y -qq "$pkg" && ok "$pkg"; }
+# ─── 2. 系统依赖 ────────────────────────────────────────────────
+head "1/4  系统依赖"
+apt-get update -qq 2>/dev/null
+for p in curl ffmpeg aria2 python3 python3-pip; do
+  dpkg -s "$p" &>/dev/null && skip "$p" || { apt-get install -y -qq "$p" && ok "$p"; }
 done
-python3 -c "import mutagen" 2>/dev/null && skip "mutagen 已存在" \
+python3 -c "import mutagen" &>/dev/null && skip "mutagen" \
   || { pip3 install -q --break-system-packages mutagen 2>/dev/null && ok "mutagen"; }
 
-# ─── 3. Node.js ────────────────────────────────────────────────
-step "2/5 · Node.js"
+# ─── 3. Node.js + yt-dlp + PM2 ─────────────────────────────────
+head "2/4  工具链"
 if command -v node &>/dev/null && [ "$(node --version | tr -d v | cut -d. -f1)" -ge 18 ]; then
-  skip "Node.js $(node --version) 已满足"
+  skip "Node.js $(node --version)"
 else
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash - &>/dev/null
   apt-get install -y -qq nodejs && ok "Node.js $(node --version)"
 fi
 
-# ─── 4. yt-dlp ─────────────────────────────────────────────────
-step "3/5 · yt-dlp"
-if [ -x "$YTDLP_BIN" ] && "$YTDLP_BIN" --version &>/dev/null; then
-  skip "yt-dlp $("$YTDLP_BIN" --version) 已存在"
+if [ -x "$YT" ]; then
+  skip "yt-dlp $("$YT" --version)"
 else
-  curl -fsSL --connect-timeout 15 --max-time 60 "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" -o "$YTDLP_BIN" \
-    && chmod +x "$YTDLP_BIN" && ok "yt-dlp $("$YTDLP_BIN" --version)" \
-    || fail "yt-dlp 下载失败，请检查网络"
+  curl -fsSL --connect-timeout 15 --max-time 60 \
+    "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp" -o "$YT" \
+    && chmod +x "$YT" && ok "yt-dlp $("$YT" --version)" || fail "yt-dlp 下载失败"
 fi
 
-# ─── 5. PM2 + 后端 + 前端 ────────────────────────────────────
-step "4/5 · 运行时"
-command -v pm2 &>/dev/null && skip "PM2 $(pm2 --version) 已存在" \
-  || { npm install -g pm2 -q && ok "PM2"; }
+command -v pm2 &>/dev/null && skip "PM2" || { npm install -g pm2 -q && ok "PM2"; }
 
-[ -d node_modules ] && skip "后端依赖已存在" \
-  || { npm install --production --no-audit --no-fund && ok "后端依赖"; }
+# ─── 4. 后端 + 前端 ────────────────────────────────────────────
+head "3/4  项目依赖"
+[ -d node_modules ] && skip "npm 依赖" \
+  || { npm install --production --no-audit --no-fund && ok "npm 依赖"; }
 
-CLIENT_DIR="$SCRIPT_DIR/client"
-if [ -d "$CLIENT_DIR/dist" ] && [ -f "$CLIENT_DIR/dist/index.html" ]; then
-  skip "前端已构建"
+CD="$DIR/client"
+if [ -d "$CD/dist" ] && [ -f "$CD/dist/index.html" ] && [ "$CD/dist/index.html" -nt "$CD/src/App.jsx" ]; then
+  skip "前端构建"
 else
-  (cd "$CLIENT_DIR" && npm install --no-audit --no-fund && npm run build) && ok "前端构建完成"
+  (cd "$CD" && npm install --no-audit --no-fund &>/dev/null && npm run build &>/dev/null) && ok "前端构建"
 fi
 
-# ─── 6. 部署 ──────────────────────────────────────────────────
-step "5/5 · 部署"
+# ─── 5. 部署 ────────────────────────────────────────────────────
+head "4/4  部署"
 mkdir -p downloads tmp logs
-if [ ! -f "$ENV_FILE" ]; then
-  cat > "$ENV_FILE" << EOF
-PORT=${PORT}
-NODE_ENV=production
-SPOTIFY_CLIENT_ID=${SPOT_ID}
-SPOTIFY_CLIENT_SECRET=${SPOT_SEC}
-EOF
-  ok ".env 已创建"
-fi
 
-for old in ytdl-server oasisic-downloader; do
-  pm2 list 2>/dev/null | grep -qw "$old" || continue
-  pm2 stop "$old" --silent 2>/dev/null || true
-  pm2 delete "$old" --silent 2>/dev/null || true
+# 写 .env（不管存不存在都写正确的端口）
+cat > "$ENV" << EOF
+PORT=${P}
+NODE_ENV=production
+SPOTIFY_CLIENT_ID=${S1}
+SPOTIFY_CLIENT_SECRET=${S2}
+EOF
+ok ".env 已配置 (端口 ${P})"
+
+# 停旧进程 → 启动
+for n in ytdl-server oasisic-downloader; do
+  pm2 list 2>/dev/null | grep -qw "$n" || continue
+  pm2 stop "$n" --silent 2>/dev/null || true
+  pm2 delete "$n" --silent 2>/dev/null || true
 done
-pm2 start ecosystem.config.js && pm2 save && ok "服务已启动"
+pm2 start ecosystem.config.js &>/dev/null
+pm2 save &>/dev/null
+ok "服务已启动 (端口 ${P})"
 
 # 管理命令
-cp scripts/oasisic.sh /usr/local/bin/oasisic && chmod +x /usr/local/bin/oasisic && ok "oasisic 管理命令"
+# 管理命令（替换路径占位符）
+sed "s|@@INSTALL_DIR@@|$DIR|g; s|@@ENV_FILE@@|$ENV|g" scripts/oasisic.sh > /usr/local/bin/oasisic
+chmod +x /usr/local/bin/oasisic && ok "oasisic 命令"
 
-# 定时更新 yt-dlp
-crontab -l 2>/dev/null | grep -qF "$YTDLP_BIN -U" \
-  || (crontab -l 2>/dev/null; echo "0 3 * * * $YTDLP_BIN -U >> /var/log/ytdlp-update.log 2>&1") | crontab -
+# cron
+crontab -l 2>/dev/null | grep -qF "$YT -U" \
+  || (crontab -l 2>/dev/null; echo "0 3 * * * $YT -U >> /var/log/ytdlp-update.log 2>&1") | crontab -
 
-# ─── 完成 ──────────────────────────────────────────────────────
+# ─── 完成 ────────────────────────────────────────────────────────
 IP="$(hostname -I 2>/dev/null | awk '{print $1}' || echo localhost)"
 echo ""
-echo "  ╔══════════════════════════════════════════╗"
-echo "  ║   ✅ 安装完成！($(( $(date +%s) - START ))秒)        ║"
-echo "  ╚══════════════════════════════════════════╝"
+echo "    ─────────────────────────────"
+echo "     ✅ 安装完成 ($(( $(date +%s) - START ))s)"
 echo ""
-echo "  🌐  http://${IP}:${PORT}"
-echo "  🛠  oasisic          — 管理命令"
+echo "     🌐  http://${IP}:${P}"
+echo "     🛠  oasisic"
