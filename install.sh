@@ -212,7 +212,28 @@ command -v pm2 &>/dev/null && ok "PM2 $(pm2 --version) 已安装" || {
 step "5 · 后端 npm 依赖"
 # =============================================================================
 [ -f "package.json" ] || fail "未找到 package.json，请在项目根目录运行"
-run_q "npm install" npm install --production
+
+# 低内存环境（<1GB）处理策略
+TOTAL_MEM="$(awk '/MemTotal/{print $2}' /proc/meminfo 2>/dev/null || echo 2097152)"
+if [ "$TOTAL_MEM" -lt 1048576 ] 2>/dev/null; then
+  warn "内存不足 1GB（检测到 ${TOTAL_MEM} KB）"
+  warn "npm install 可能因内存不足被系统终止"
+  echo ""
+  echo -e "  ${B}💡 推荐使用 Docker 部署（无需本地构建）:${N}"
+  echo -e "  ${C}  docker compose -f docker-compose.pull.yml up -d${N}"
+  echo ""
+  read -r -p "  继续本地安装？[y/N]: " _CONT
+  [[ "${_CONT,,}" != "y" ]] && { echo "安装已取消"; exit 0; }
+  # 尝试创建 swap（如果有 root 权限）
+  if [ "$(id -u)" -eq 0 ] && ! swapon --show 2>/dev/null | grep -q .; then
+    info "尝试创建 1GB swap 以辅助安装..."
+    fallocate -l 1G /swapfile 2>/dev/null && chmod 600 /swapfile && \
+    mkswap /swapfile 2>/dev/null && swapon /swapfile 2>/dev/null && \
+    ok "Swap 已启用 (1GB)" || warn "创建 swap 失败，npm install 仍可能被终止"
+  fi
+fi
+
+run_q "npm install" npm install --production --no-audit --no-fund
 ok "后端依赖安装完成"
 
 # =============================================================================
