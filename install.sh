@@ -94,6 +94,7 @@ pm2 start ecosystem.config.js &>/dev/null
 pm2 save &>/dev/null
 ok "service started (port ${P})"
 
+# 管理命令（替换路径占位符）
 sed "s|@@INSTALL_DIR@@|$DIR|g; s|@@ENV_FILE@@|$ENV|g" scripts/oasisic.sh > /usr/local/bin/oasisic
 chmod +x /usr/local/bin/oasisic && ok "oasisic command installed"
 

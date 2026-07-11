@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
-import { Sun, Moon, Monitor, FileMusic, Video, ChevronRight } from 'lucide-react';
-import { getVideoInfo, createDownload } from './api.js';
+import { Sun, Moon, Monitor, FileMusic, Video, ChevronRight, Key } from 'lucide-react';
+import { getVideoInfo, createDownload, setAuthToken, getAuthToken } from './api.js';
 import { useTheme } from './hooks/useTheme.js';
 import URLInput, { LogoIcon } from './components/URLInput.jsx';
 import VideoInfoCard from './components/VideoInfo.jsx';
@@ -106,6 +106,68 @@ function ServerStatus() {
       <span style={{ width:5, height:5, borderRadius:'50%', background:cfg.dot, display:'inline-block', flexShrink:0 }}/>
       {cfg.label}
     </span>
+  );
+}
+
+// ── Auth token input ──────────────────────────────────────────────────────────
+function AuthButton() {
+  const [open, setOpen] = useState(false);
+  const [input, setInput] = useState(getAuthToken());
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+  }, [open]);
+
+  const save = () => {
+    setAuthToken(input.trim() || null);
+    setOpen(false);
+  };
+
+  return (
+    <div style={{ position:'relative' }}>
+      <button onClick={() => setOpen(v => !v)} title={getAuthToken() ? '已设置 Token' : '设置 Token'}
+        style={{
+          display:'flex', alignItems:'center', gap:4, padding:'5px 8px',
+          borderRadius:'var(--r-sm)', border:'1px solid var(--border-2)',
+          background: getAuthToken() ? 'rgba(34,197,94,0.1)' : 'var(--surface-2)',
+          cursor:'pointer', color: getAuthToken() ? 'var(--green)' : 'var(--t3)',
+          fontSize:11.5, fontFamily:'var(--font)', transition:'all var(--dur)',
+        }}>
+        <Key size={12}/>
+      </button>
+      {open && (
+        <div style={{
+          position:'absolute', top:'calc(100% + 6px)', right:0, zIndex:300,
+          background:'var(--surface)', border:'1px solid var(--border-2)',
+          borderRadius:'var(--r)', boxShadow:'var(--sh-md)', padding:12, minWidth:240,
+        }}>
+          <p style={{ fontSize:12, fontWeight:600, color:'var(--t1)', marginBottom:6 }}>
+            {getAuthToken() ? '🔒 已设置 Token' : '🔓 设置认证 Token'}
+          </p>
+          <input ref={inputRef} className="input" value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && save()}
+            placeholder="输入 Bearer Token..."
+            style={{ fontSize:13, padding:'8px 10px', marginBottom:8 }}
+          />
+          <div style={{ display:'flex', gap:6 }}>
+            <button className="btn btn-red btn-xs" onClick={save} style={{ flex:1 }}>
+              {getAuthToken() ? '更新' : '保存'}
+            </button>
+            {getAuthToken() && (
+              <button className="btn btn-ghost btn-xs"
+                onClick={() => { setAuthToken(null); setInput(''); setOpen(false); }}>
+                清除
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize:10.5, color:'var(--t3)', marginTop:6, lineHeight:1.4 }}>
+            仅当服务端设置了 AUTH_TOKEN 时需要。Token 保存在浏览器本地。
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -428,7 +490,8 @@ export default function App() {
           </p>
           <p style={{ fontSize:11, color:'var(--t3)', marginTop:1 }}>YouTube 音视频下载器</p>
         </div>
-        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8 }}>
+        <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:6 }}>
+          <AuthButton/>
           <ServerStatus/>
           <ThemeDropdown mode={themeMode} setMode={setThemeMode}/>
         </div>

@@ -1,4 +1,4 @@
-# 🧲 Oasisic Downloader
+# ⚡ Oasisic Downloader
 
 > YouTube 高品质音视频下载系统 · 自托管 · 无广告 · 无限制
 
@@ -154,6 +154,31 @@ NODE_ENV=production
 SPOTIFY_CLIENT_ID=
 SPOTIFY_CLIENT_SECRET=
 APPLE_MUSIC_TOKEN=
+```
+
+---
+
+## 🔒 鉴权配置（可选）
+
+默认无鉴权，任何人可访问。如需保护，设置 `AUTH_TOKEN`：
+
+```bash
+# 传统部署 — 在 server/.env 中添加
+echo 'AUTH_TOKEN=your-secret-token' >> server/.env
+pm2 restart oasisic-downloader
+
+# Docker 部署 — 在 docker-compose.yml 中添加
+# environment:
+#   - AUTH_TOKEN=your-secret-token
+```
+
+启用后，所有 API 请求需携带 `Authorization: Bearer your-secret-token` 头。
+
+**前端使用：** 页面右上角会出现 🔑 按钮，点击输入 Token 即可。Token 保存在浏览器本地，刷新不丢失。
+
+**测试：**
+```bash
+curl -H "Authorization: Bearer your-secret-token" http://localhost:3000/api/health
 ```
 
 ---
