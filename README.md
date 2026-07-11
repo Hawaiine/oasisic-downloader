@@ -271,38 +271,6 @@ Docker 会缓存中间层，增量构建仅需 10-30 秒。如果经常更新，
 
 ---
 
-## 🏗 项目结构
-
-```
-Oasisic-Downloader/
-├── server/                # Node.js 后端
-│   ├── index.js           # Express + Socket.IO 入口
-│   ├── config.js          # 配置加载 + 二进制路径检测
-│   ├── routes/
-│   │   ├── info.js        # GET /api/info — 视频/播放列表信息
-│   │   ├── download.js    # POST /api/download + 文件流下载
-│   │   ├── lyrics.js      # GET /api/lyrics — 多源歌词搜索
-│   │   └── batch.js       # POST /api/batch — 打包下载
-│   └── services/
-│       ├── ytdlp.js       # yt-dlp 封装（下载/解析/反检测）
-│       ├── queue.js       # 任务队列管理
-│       ├── cover.js       # 封面抓取 + 裁剪 + 嵌入
-│       ├── lyrics.js      # 歌词搜索引擎
-│       └── zhConvert.js   # 繁→简中文转换
-├── client/                # React 前端
-│   └── src/
-│       ├── App.jsx        # 主应用
-│       ├── api.js         # API 请求封装
-│       ├── components/    # UI 组件
-│       └── hooks/         # 自定义 hooks
-├── Dockerfile             # Docker 构建
-├── docker-compose.yml     # Docker 编排
-├── install.sh             # 一键安装脚本
-└── ecosystem.config.js    # PM2 配置
-```
-
----
-
 ## 📸 Screenshots
 
 （可在此处加入截图）

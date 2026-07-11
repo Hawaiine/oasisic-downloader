@@ -81,6 +81,7 @@ PORT=${P}
 NODE_ENV=production
 SPOTIFY_CLIENT_ID=${S1}
 SPOTIFY_CLIENT_SECRET=${S2}
+# AUTH_TOKEN=your-secret-token    # 可选：启用 Bearer 鉴权（注释掉则不开启）
 EOF
 ok "config written (port ${P})"
 

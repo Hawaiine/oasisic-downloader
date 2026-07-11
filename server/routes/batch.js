@@ -78,10 +78,11 @@ router.post('/download', async (req, res) => {
   // Stream tar.gz to response using system tar
   // -czf - : write compressed archive to stdout
   // -C dir : change to each file's directory before adding
-  // We add files one by one via multiple -C/file pairs
+  // FIX: Use '--' separator to prevent filename-based argument injection
+  // (evil filenames starting with '-' could be parsed as tar options)
   const tarArgs = ['-czf', '-'];
   for (const { dir, name } of files) {
-    tarArgs.push('-C', dir, name);
+    tarArgs.push('-C', dir, '--', name);
   }
 
   const tarProc = spawn('tar', tarArgs, { stdio: ['ignore', 'pipe', 'pipe'] });

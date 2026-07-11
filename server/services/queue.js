@@ -46,14 +46,14 @@ function createTask(type, url, options, videoInfo) {
     progress:    0,
     speed:       '',
     eta:         '',
-    log:         [],
+    log:         [],       // max 200 lines, enforced in runTask
     error:       null,
-    outputFile:  null,   // full path in temp dir
+    outputFile:  null,
     fileSize:    null,
     lyrics:      null,
     createdAt:   Date.now(),
     taskDir,
-    proc:        null,   // running child process (for cancellation)
+    proc:        null,
     cancelled:   false,
   };
 
@@ -89,6 +89,8 @@ async function runTask(task) {
       });
     } else if (p.type === 'log') {
       task.log.push(p.log);
+      // Cap log at 200 lines to prevent memory leak
+      if (task.log.length > 200) task.log.splice(0, task.log.length - 200);
       const isConverting = p.log.includes('[ffmpeg]') || p.log.includes('[ExtractAudio]');
       const status = isConverting ? 'converting' : 'running';
       // Keep last known percent — do NOT reset to 0 on log lines
@@ -173,10 +175,11 @@ async function runTask(task) {
         .catch(()=>{});
     }
 
-    // Schedule temp dir cleanup after 30 min (gives user time to download)
+    // Schedule task cleanup after 30 min — delete from memory + temp dir
     setTimeout(() => {
-      try { fs.rmSync(task.taskDir, { recursive:true, force:true }); console.log(`[Queue] Cleaned up ${taskId}`); }
-      catch(_){}
+      try { fs.rmSync(task.taskDir, { recursive:true, force:true }); } catch(_){}
+      tasks.delete(taskId);
+      console.log(`[Queue] Cleaned up task ${taskId}`);
     }, 30 * 60 * 1000);
 
   } catch(e) {

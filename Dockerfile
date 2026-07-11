@@ -43,7 +43,11 @@ COPY server/ ./server/
 COPY --from=frontend /app/client/dist ./client/dist
 
 # 运行时目录
-RUN mkdir -p downloads tmp logs
+RUN mkdir -p downloads tmp logs && \
+    chown -R 1000:1000 /app && \
+    useradd -u 1000 -m -d /app -s /bin/bash oasisic
+
+USER oasisic
 
 # 环境变量
 ENV NODE_ENV=production

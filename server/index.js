@@ -13,7 +13,7 @@ const cors         = require('cors');
 const path         = require('path');
 const fs           = require('fs');
 
-const CONFIG       = require('./config');          // dotenv loaded inside config.js
+const CONFIG       = require('./config');
 const { initQueue } = require('./services/queue');
 
 const app    = express();
@@ -27,16 +27,24 @@ const io = new Server(server, {
 app.set('io', io);
 initQueue(io);
 
+// ── Optional Bearer token auth ───────────────────────────────────────────────
+// Set AUTH_TOKEN in .env to enable. Without it, all requests pass through.
+const AUTH_TOKEN = process.env.AUTH_TOKEN || null;
+if (AUTH_TOKEN) {
+  app.use('/api/', (req, res, next) => {
+    // Skip health check (used by Docker healthcheck and monitoring)
+    if (req.path === '/health') return next();
+    const header = req.headers.authorization || '';
+    if (header === `Bearer ${AUTH_TOKEN}`) return next();
+    return res.status(401).json({ error: '未授权，需要有效的 AUTH_TOKEN' });
+  });
+  console.log('[auth] Bearer token auth enabled');
+}
+
 // ── Middleware ────────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json({ limit:'10mb' }));
 app.use(express.urlencoded({ extended:true }));
-
-// Serve download files — Content-Disposition: attachment forces save dialog
-app.use('/downloads', (req, res, next) => {
-  res.setHeader('Content-Disposition', `attachment; filename="${path.basename(decodeURIComponent(req.path))}"`);
-  next();
-}, express.static(CONFIG.DOWNLOADS_DIR));
 
 // ── API routes ────────────────────────────────────────────────────────────────
 app.use('/api/info',     require('./routes/info'));
