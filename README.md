@@ -30,6 +30,8 @@
 
 ### 方式 A：从 Docker Hub 拉取（推荐，免构建）
 
+镜像地址：**`barryallen26/oasisic-downloader:latest`**
+
 ```bash
 # 首次部署
 mkdir ~/oasisic && cd ~/oasisic
