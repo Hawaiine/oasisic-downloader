@@ -44,8 +44,8 @@ COPY --from=frontend /app/client/dist ./client/dist
 
 # 运行时目录
 RUN mkdir -p downloads tmp logs && \
-    chown -R 1000:1000 /app && \
-    useradd -u 1000 -m -d /app -s /bin/bash oasisic
+    useradd -u 1000 -m -d /app -s /bin/bash oasisic && \
+    chown -R oasisic:oasisic /app
 
 USER oasisic
 
