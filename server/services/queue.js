@@ -18,7 +18,7 @@ const { v4: uuidv4 } = require('uuid');
 const CONFIG  = require('../config');
 const { downloadAudio, downloadVideo } = require('./ytdlp');
 const { fetchAndEmbedCover }           = require('./cover');
-const { getLyrics }                    = require('./lyrics');
+const { getLyrics }                    = require('./lyrics_search');
 const { enrichMetadata }               = require('./enrichment');
 
 const tasks  = new Map();

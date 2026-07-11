@@ -102,7 +102,7 @@ do_logs() {
 }
 
 do_rebuild() {
-  (cd "$SCRIPT_DIR/client" && npm install --quiet 2>/dev/null && npm run build >/dev/null 2>&1) \
+  (cd "$SCRIPT_DIR/web" && npm install --quiet 2>/dev/null && npm run build >/dev/null 2>&1) \
     && { pm2_restart; echo "  ✅ 重建完成"; } || echo "  ❌ 失败"
   press_any_key
 }

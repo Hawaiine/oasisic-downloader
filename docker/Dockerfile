@@ -23,11 +23,11 @@ WORKDIR /app
 # ── Stage 1: 前端构建 ──────────────────────────────────────────────────
 FROM base AS frontend
 
-COPY client/package.json client/package-lock.json* ./client/
-RUN cd client && npm install --no-audit --no-fund
+COPY web/package.json web/package-lock.json* ./web/
+RUN cd web && npm install --no-audit --no-fund
 
-COPY client/ ./client/
-RUN cd client && npm run build && rm -rf node_modules
+COPY web/ ./web/
+RUN cd web && npm run build && rm -rf node_modules
 
 # ── Stage 2: 后端生产镜像 ─────────────────────────────────────────────
 FROM base AS production
@@ -40,7 +40,7 @@ RUN npm install --omit=dev --ignore-scripts --no-audit --no-fund
 COPY server/ ./server/
 
 # 前端构建产物
-COPY --from=frontend /app/client/dist ./client/dist
+COPY --from=frontend /app/web/dist ./web/dist
 
 # 运行时目录
 RUN mkdir -p downloads tmp logs && \

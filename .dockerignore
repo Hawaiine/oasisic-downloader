@@ -1,8 +1,8 @@
 .git
 .gitignore
 node_modules
-client/node_modules
-client/dist
+web/node_modules
+web/dist
 downloads
 tmp
 logs

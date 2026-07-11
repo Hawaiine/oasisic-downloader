@@ -5,7 +5,7 @@ G='\033[0;32m' C='\033[0;36m' N='\033[0m'
 ok()   { echo -e "   ${G}✔${N}  $*"; }
 head() { echo -e "\n  ${G}==>${N}  ${G}$*${N}"; }
 
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ENV="$DIR/server/.env"
 YT="/usr/local/bin/yt-dlp"
 START=$(date +%s)
@@ -66,7 +66,7 @@ head "3/4  Project Dependencies"
 [ ! -d node_modules ] && npm install --production --no-audit --no-fund
 ok "npm packages"
 
-CD="$DIR/client"
+CD="$DIR/web"
 if [ ! -f "$CD/dist/index.html" ] || [ "$CD/src/App.jsx" -nt "$CD/dist/index.html" ]; then
   (cd "$CD" && npm install --no-audit --no-fund &>/dev/null && npm run build &>/dev/null)
 fi
@@ -95,7 +95,7 @@ pm2 save &>/dev/null
 ok "service started (port ${P})"
 
 # 管理命令（替换路径占位符）
-sed "s|@@INSTALL_DIR@@|$DIR|g; s|@@ENV_FILE@@|$ENV|g" scripts/oasisic.sh > /usr/local/bin/oasisic
+sed "s|@@INSTALL_DIR@@|$DIR|g; s|@@ENV_FILE@@|$ENV|g" "$DIR/scripts/oasisic.sh" > /usr/local/bin/oasisic
 chmod +x /usr/local/bin/oasisic && ok "oasisic command installed"
 
 crontab -l 2>/dev/null | grep -qF "$YT -U" \

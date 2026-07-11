@@ -52,7 +52,7 @@ const ROOT_DIR      = path.resolve(__dirname, '..');
 const DOWNLOADS_DIR = path.join(ROOT_DIR, 'downloads');
 const TEMP_DIR      = path.join(ROOT_DIR, 'tmp');
 const LOGS_DIR      = path.join(ROOT_DIR, 'logs');
-const CLIENT_BUILD  = path.join(ROOT_DIR, 'client', 'dist');
+const CLIENT_BUILD  = path.join(ROOT_DIR, 'web', 'dist');
 
 for (const dir of [DOWNLOADS_DIR, TEMP_DIR, LOGS_DIR]) {
   fs.mkdirSync(dir, { recursive: true });

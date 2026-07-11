@@ -1,7 +1,5 @@
-# =============================================================================
 # Oasisic Downloader — Docker 自动构建
 # 每次推送 main 分支自动构建并推送到 Docker Hub
-# =============================================================================
 # 首次使用前需要在 GitHub 仓库设置 Secrets：
 #   DOCKERHUB_USERNAME: barryallen26
 #   DOCKERHUB_TOKEN:    你的 Docker Hub Access Token（非密码）
@@ -50,6 +48,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: docker/Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

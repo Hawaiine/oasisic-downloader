@@ -1,6 +1,6 @@
 'use strict';
 const { Router } = require('express');
-const { getLyrics } = require('../services/lyrics');
+const { getLyrics } = require('../services/lyrics_search');
 const router = Router();
 
 router.get('/', async (req, res) => {

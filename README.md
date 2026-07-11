@@ -33,11 +33,11 @@
 ```bash
 # 首次部署
 mkdir ~/oasisic && cd ~/oasisic
-wget https://raw.githubusercontent.com/Hawaiine/oasisic-downloader/main/docker-compose.pull.yml
-docker compose -f docker-compose.pull.yml up -d
+wget https://raw.githubusercontent.com/Hawaiine/oasisic-downloader/main/docker/docker-compose.pull.yml
+docker compose -f docker/docker-compose.pull.yml up -d
 
 # 查看状态
-docker compose -f docker-compose.pull.yml logs -f
+docker compose -f docker/docker-compose.pull.yml logs -f
 ```
 
 ### 方式 B：本地构建
@@ -45,12 +45,12 @@ docker compose -f docker-compose.pull.yml logs -f
 ```bash
 git clone https://github.com/Hawaiine/oasisic-downloader.git
 cd Oasisic-Downloader
-docker compose up -d --build
+docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 访问 **`http://你的IP:3000`** 🎉
 
-> 📖 完整 Docker 指南：[DOCKER.md](DOCKER.md) — 镜像说明、配置、代理、cookies、FAQ
+> 📖 完整 Docker 指南：[docs/DOCKER.md](docs/DOCKER.md) — 镜像说明、配置、代理、cookies、FAQ
 
 ### 可选配置
 
@@ -87,7 +87,7 @@ git clone https://github.com/Hawaiine/oasisic-downloader.git
 cd Oasisic-Downloader
 
 # 一键安装（需要 root / sudo）
-sudo ./install.sh
+sudo ./scripts/install.sh
 
 # 或手动：
 npm install --production
@@ -214,19 +214,22 @@ Oasisic-Downloader/
 │       ├── lyrics.js        # 歌词搜索引擎（5个源头）
 │       ├── enrichment.js    # 元数据增强
 │       └── zhConvert.js     # 繁→简中文
-├── client/                  # React 前端 (Vite)
+├── web/                     # React 前端 (Vite)
 │   └── src/
 │       ├── App.jsx          # 主应用
+│       ├── api.js           # API 请求 + 鉴权
 │       ├── components/      # UI 组件 (7个)
 │       └── hooks/           # 自定义 hooks
-├── scripts/
+├── scripts/                 # 运维脚本
+│   ├── install.sh           # 安装脚本
 │   └── oasisic.sh           # 管理命令模板
-├── install.sh               # 安装脚本
-├── Dockerfile               # Docker 构建
-├── docker-compose.yml       # Docker 编排（本地构建）
-├── docker-compose.pull.yml  # Docker 编排（Hub 拉取）
-├── DOCKER.md                # Docker 部署指南
-└── .github/workflows/       # CI/CD 自动构建
+├── docker/                  # Docker 配置
+│   ├── Dockerfile           # 多阶段构建
+│   ├── docker-compose.yml   # 本地构建编排
+│   └── docker-compose.pull.yml  # Hub 拉取编排
+├── docs/                    # 文档
+│   └── DOCKER.md            # Docker 部署指南
+├── ecosystem.config.js      # PM2 配置
 ```
 
 ---

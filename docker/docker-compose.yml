@@ -9,7 +9,9 @@
 
 services:
   oasisic:
-    build: .
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     container_name: oasisic-downloader
     restart: unless-stopped
     ports:
